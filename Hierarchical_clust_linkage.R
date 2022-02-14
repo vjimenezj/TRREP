@@ -1,7 +1,9 @@
+# Installing required packages
+if (!require("MASS")) install.packages("MASS")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("ggrepel")) install.packages("ggrepel")
+
 ### Checking the impact of the linkage method
-
-install.packages(c("MASS", "ggplot2", "ggrepel"))
-
 library(MASS)
 library(ggplot2)
 library(ggrepel)

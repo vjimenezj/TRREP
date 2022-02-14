@@ -1,4 +1,14 @@
-# Comparing clustering algorithms
+###################################################
+######### Comparing clustering algorithms #########
+###################################################
+
+# Installing required packages
+if (!require("MASS")) install.packages("MASS")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("ggrepel")) install.packages("ggrepel")
+if (!require("factoextra")) install.packages("factoextra")
+if (!require("ppclust")) install.packages("ppclust")
+if (!require("dbscan")) install.packages("dbscan")
 
 # Simulating three bivariate normal clusters
 N<-20
@@ -51,7 +61,6 @@ ggplot(data_clust, aes(x = X1, y = X2)) +
   theme_bw()
 
 #### 2 - K-means clustering
-install.packages("factoextra")
 library(factoextra)
 # Exploring k to choose the best value
 fviz_nbclust(data_clust, FUNcluster = kmeans, method = "wss") 
@@ -66,7 +75,6 @@ ggplot(data_clust, aes(x = X1, y = X2)) +
   theme_bw()
 
 #### 3 - Fuzzy c-means clustering
-install.packages("ppclust")
 library(ppclust)
 # Choosing same k as before: k = 3
 fuzzy_clustering <- fcm(data_clust, centers=3)
@@ -78,7 +86,6 @@ ggplot(data_clust, aes(x = X1, y = X2)) +
   theme_bw()
 
 #### 4 - DBSCAN clustering
-install.packages("dbscan")
 library(dbscan)
 kNNdistplot(data_clust, k = 5)
 abline(h = 1, lty = 2)

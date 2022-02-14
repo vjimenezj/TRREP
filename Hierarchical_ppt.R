@@ -1,5 +1,9 @@
-install.packages(c("MASS", "ggplot2", "ggrepel"))
+# Installing required packages
+if (!require("MASS")) install.packages("MASS")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("ggrepel")) install.packages("ggrepel")
 
+# Example in the ppt
 library(MASS)
 library(ggplot2)
 library(ggrepel)
