@@ -26,4 +26,4 @@ colcluster <- cutree(dendr, 5)
 ggplot(example, aes(x = X1, y = X2)) +
   geom_point(col = colcluster, size = 5) +
   geom_text_repel(label = rownames(example)) +
-  theme_void()
+  theme_bw()
