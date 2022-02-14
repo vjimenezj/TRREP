@@ -1,0 +1,29 @@
+### Checking the impact of the linkage method
+
+install.packages(c("MASS", "ggplot2", "ggrepel"))
+
+library(MASS)
+library(ggplot2)
+library(ggrepel)
+
+N<-20
+mu <- c(0,0)
+sigma <- matrix(nrow=2,c(1,0,0,1))
+set.seed(1)
+example <- data.frame(mvrnorm(N, mu = mu, Sigma = sigma ))
+
+ggplot(example, aes(x = X1, y = X2)) +
+  geom_point() +
+  geom_text_repel(label = rownames(example)) +
+  theme_void()
+
+distances <- round(dist(example), 1)
+similarities <- round(1 - dist(example)/max(dist(example)), 1)
+
+# dendr <- hclust(dist(example), method = "single")
+plot(dendr)
+colcluster <- cutree(dendr, 5)
+ggplot(example, aes(x = X1, y = X2)) +
+  geom_point(col = colcluster, size = 5) +
+  geom_text_repel(label = rownames(example)) +
+  theme_void()
