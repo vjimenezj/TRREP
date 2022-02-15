@@ -10,6 +10,14 @@ if (!require("factoextra")) install.packages("factoextra")
 if (!require("ppclust")) install.packages("ppclust")
 if (!require("dbscan")) install.packages("dbscan")
 
+library(MASS)
+library(ggplot2)
+library(ggrepel)
+library(factoextra)
+library(ppclust)
+library(dbscan)
+
+
 # Simulating three bivariate normal clusters
 N<-20
 mu1 <- c(0,0)
