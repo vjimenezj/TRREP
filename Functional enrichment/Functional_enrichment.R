@@ -1,0 +1,123 @@
+setRepositories()
+if (!require("gprofiler2")) install.packages("gprofiler2")
+if (!require("fgsea")) install.packages("fgsea")
+if (!require("msigdbr")) install.packages("msigdbr")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("ggplot2")) install.packages("ggplot2")
+
+adipose_correlation <- readRDS("./adipose_correlation_dataframe.RDS")
+adipogenesis_genes <- readRDS("./adipogenesis_genes.RDS")
+
+
+library(gprofiler2)
+query_gene <- list(Adipogenesis = adipogenesis_genes)
+# Online query
+gprof <- gost(query = query_gene,
+              organism = "hsapiens", 
+              custom_bg = adipose_correlation$names.adipo_sc.,
+              domain_scope = "custom_annotated",
+              correction_method = "fdr",
+              # source = "KEGG",
+              significant = FALSE,
+              as_short_link = TRUE)
+gprof
+# Obtaining results in the r session (only KEGG database)
+gprof <- gost(query = query_gene,
+              organism = "hsapiens", 
+              custom_bg = adipose_correlation$names.adipo_sc.,
+              domain_scope = "custom_annotated",
+              correction_method = "fdr",
+              source = "KEGG",
+              significant = FALSE,
+              as_short_link = FALSE)
+p <- gostplot(gprof, capped = TRUE, interactive = FALSE)
+publish_gostplot(p, highlight_terms = gprof$result$term_id[order(gprof$result$p_value)[1:5]]) 
+
+
+library(fgsea)
+library(msigdbr)
+library(dplyr)
+
+# Load MSigDB data
+msigdbr_collections()
+human_kegg = msigdbr(species = "human", category = "C2", subcategory = "CP:KEGG")
+str(human_kegg)
+
+# Pathways format for fgsea (list of vectors being one vector each pathway)
+kegg_pathways <- lapply(unique(human_kegg$gs_name), function(x) human_kegg$gene_symbol[human_kegg$gs_name == x])
+names(kegg_pathways) <- unique(human_kegg$gs_name)
+str(kegg_pathways)
+
+# Changing the format of the correlation data into a named vector with no duplicate names
+adipo_sc_corr <- as.numeric(adipose_correlation$adipo_sc)
+names(adipo_sc_corr) <- adipose_correlation$names.adipo_sc.
+# Ordering gene results to delete the less informative measurement for each duplicated gene name
+adipo_sc_corr <- adipo_sc_corr[order(abs(adipo_sc_corr), decreasing = TRUE)]
+adipo_sc_corr <- adipo_sc_corr[!duplicated(names(adipo_sc_corr))]
+# Running fgsea algorithm
+adipose_enrichment <- fgsea(pathways=kegg_pathways, stats=adipo_sc_corr, eps = 0)
+topPathways <- adipose_enrichment[head(order(as.numeric(padj), -abs(as.numeric(NES))), 10), pathway]
+
+adipose_enrichment_tidy <- adipose_enrichment %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+
+# Show in a nice table:
+adipose_enrichment_tidy %>% 
+  dplyr::select(-leadingEdge, -ES) %>% 
+  arrange(padj) %>% 
+  DT::datatable()
+
+
+library(ggplot2)
+ggplot(adipose_enrichment_tidy, aes(reorder(pathway, NES), NES)) +
+  geom_col(aes(fill=padj<0.05)) +
+  coord_flip() +
+  labs(x="Pathway", y="Normalized Enrichment Score",
+       title="Hallmark pathways NES from GSEA") + 
+  theme_minimal()
+
+
+rankgenes <- function(geneset, ranked_list) {
+  ranked_genes <- rank(ranked_list)
+  index_genes <- match(geneset, names(ranked_list))
+  results <- data.frame(geneset, unname(ranked_list[index_genes]), unname(ranked_genes[index_genes]))
+  colnames(results) <- c("genes", "correlation", "rank")
+  results <- results[order(results$rank, decreasing = FALSE),]
+  final <- list(results, length(ranked_list))
+  return(final)
+}
+exploration <- rankgenes(kegg_pathways[[topPathways[1]]], adipo_sc_corr)
+geneset_exploration <- exploration[[1]]
+p <- ggplot(geneset_exploration) +
+  geom_segment(data = geneset_exploration, aes(x = rank, y = rep(0, dim(geneset_exploration)[1]), xend = rank, yend = correlation)) +
+  # ggtitle(i) +
+  ylab("Correlation coefficient (r)") +
+  xlim(1, exploration[[2]]) 
+print(p)
+
+plotEnrichment(kegg_pathways[[topPathways[1]]], adipo_sc_corr) + 
+  labs(title=paste0(names(kegg_pathways)[topPathways[1]], " genes in subcutaneous adipose CAV1 GRN"))
+
+
+
+# Comparison with ORA 
+query_gene <- list(Pos_corr = names(adipo_sc_corr[order(adipo_sc_corr, decreasing = TRUE)][1:300]))
+gost(query = query_gene,
+     organism = "hsapiens", 
+     custom_bg = adipose_correlation$names.adipo_sc.,
+     domain_scope = "custom_annotated",
+     correction_method = "fdr",
+     # source = "KEGG",
+     significant = FALSE,
+     as_short_link = TRUE)
+
+query_gene <- list(Pos_corr = names(adipo_sc_corr[order(adipo_sc_corr, decreasing = FALSE)][1:300]))
+gost(query = query_gene,
+     organism = "hsapiens", 
+     custom_bg = adipose_correlation$names.adipo_sc.,
+     domain_scope = "custom_annotated",
+     correction_method = "fdr",
+     # source = "KEGG",
+     significant = FALSE,
+     as_short_link = TRUE)
